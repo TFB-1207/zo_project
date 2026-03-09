@@ -1,0 +1,161 @@
+---
+title: "zo_seq_pre_pro"
+output: html_document
+---
+
+# Loading
+First load required libraries and set wd for this project and load in sequencing data. 
+```{r, echo=FALSE}
+library(tidyverse)
+
+setwd("C:/Users/brouw192/OneDrive - Wageningen University & Research/Documenten/zoe_data_script/data")
+
+zo_df_raw_0303 <- read_tsv("C:/Users/brouw192/OneDrive - Wageningen University & Research/Documenten/zoe_data_script/data/sequencing/260303_taxa_out.tsv")
+
+```
+# Simplifying df's
+To make it easier to work we simplify the df we get from Kevin.
+I'll make multiple, df_genus, df_genus_family etc. but for now only focus on genus data, so we only extract data from the df_raw which is relevant for the df_gs (genus dataframe). 
+```{r, echo = FALSE}
+# Define relevant columns for a genus df, some columns might be project specific
+zo_columns_df_gs <- c(
+  "library",
+  #"core",
+  #"depth_cm",
+  #"depth",
+  "phylum_name",
+  "order_name",
+  "family_name",
+  "genus_name",
+  "taxa_name", # taxa in this case refers to the reference genome which the read is mapped to, res is genus still
+  "genus_count_assembly",
+  "genus_deam_count",
+  "sum_genus_count",
+  "median_read_length_genus",
+  "ancientness_genus",
+  "deam5p_frac_genus",
+  "deam3p_frac_genus"
+  )
+
+zo_columns_df_gs_fm <- c(
+  "library",
+  #"core",
+  #"depth_cm",
+  #"depth",
+  "phylum_name",
+  "order_name",
+  "family_name",
+  "genus_name",
+  "taxa_name", # taxa in this case refers to the reference genome which the read is mapped to, res is genus still
+  "genus_count_assembly",
+  "genus_deam_count",
+  "sum_genus_count",
+  "median_read_length_genus",
+  "ancientness_genus",
+  "deam5p_frac_genus",
+  "deam3p_frac_genus",
+  "family_count_assembly",
+  "family_deam_count",
+  "sum_family_count",
+  "median_read_length_family",
+  "ancientness_family",
+  "deam5p_frac_family",
+  "deam3p_frac_family"
+  )
+```
+# Adding columns
+We also want to add columns which will make classifying plots more easy. 
+f.e. animals, plants, microbe classifications as assigned below
+```{r, echo = FALSE}
+# get all unique phylum_name
+zo_phyla <- unique(zo_df_raw_0303$phylum_name)
+
+zo_phylum_groups <- tribble(
+  ~phylum_name,           ~kingdom_group,
+  # plants
+  "Streptophyta",         "plants",
+  "Chlorophyta",          "plants",
+  "Rhodophyta",           "plants",
+  
+  # animals
+  "Chordata",             "animals",
+  "Arthropoda",           "animals",
+  "Annelida",             "animals",
+  "Mollusca",             "animals",
+  "Cnidaria",             "animals",
+  "Porifera",             "animals",
+  "Nematoda",             "animals",
+  "Rotifera",             "animals",
+  
+  # microbes (bacteria)
+  "Acidobacteriota",      "microbes",
+  "Actinomycetota",       "microbes",
+  "Aquificota",           "microbes",
+  "Armatimonadota",       "microbes",
+  "Bacillota",            "microbes",
+  "Bacteroidota",         "microbes",
+  "Balneolota",           "microbes",
+  "Bdellovibrionota",     "microbes",
+  "Campylobacterota",     "microbes",
+  "Chlamydiota",          "microbes",
+  "Chlorobiota",          "microbes",
+  "Chloroflexota",        "microbes",
+  "Cyanobacteriota",      "microbes",
+  "Deferribacterota",     "microbes",
+  "Deinococcota",         "microbes",
+  "Fibrobacterota",       "microbes",
+  "Fusobacteriota",       "microbes",
+  "Gemmatimonadota",      "microbes",
+  "Ignavibacteriota",     "microbes",
+  "Kiritimatiellota",     "microbes",
+  "Lentisphaerota",       "microbes",
+  "Mycoplasmatota",       "microbes",
+  "Myxococcota",          "microbes",
+  "Nitrospinota",         "microbes",
+  "Nitrospirota",         "microbes",
+  "Planctomycetota",      "microbes",
+  "Pseudomonadota",       "microbes",
+  "Rhodothermota",        "microbes",
+  "Spirochaetota",        "microbes",
+  "Synergistota",         "microbes",
+  "Thermodesulfobacteriota", "microbes",
+  "Thermomicrobiota",     "microbes",
+  "Thermotogota",         "microbes",
+  "Verrucomicrobiota",    "microbes",
+  "Calditrichota",        "microbes",
+  "Chrysiogenota",        "microbes",
+  "Vulcanimicrobiota",    "microbes",
+  "Elusimicrobiota",      "microbes",
+  "Atribacterota",        "microbes",
+  
+  # fungi (only Oomycota - though technically fungus-like protists)
+  "Oomycota",             "fungi",
+  
+  # protozoa
+  "Ciliophora",           "protozoa",
+  "Euglenozoa",           "protozoa",
+  "Heterolobosea",        "protozoa",
+  "Evosea",               "protozoa",
+  
+  # other (remaining protists/algae)
+  "Bacillariophyta",      "other",
+  NA,                     NA
+)
+
+```
+
+# Creating df_genus
+Now we apply the presets to get the simplified df (in this case on genus level)
+```{r, echo=FALSE}
+zo_df_gs_0303 <- zo_df_raw_0303 %>% # so we define the genus data frame (df_gs) from the raw df. 
+  #filter(!library %in% c("")) # This line is for removing f.e. libraries of blanks
+  select(all_of(zo_columns_df_gs)) %>% # use select to only select columns relevant for df_gs 
+  group_by(library, genus_name) %>%
+  slice_max(genus_count_assembly, n =1, with_ties = FALSE) %>% # this step is to only keep the assembly with the max genus counts. This                                                                  so we don't have double genus entries per library. number of unique                                                                    reads per genus are in sum_genus_count
+  mutate(deam_rate_genus = (deam5p_frac_genus + deam3p_frac_genus) / 2)  %>% #add deamination rate
+  filter(!genus_count_assembly < 10) %>% # filter out entries with lower than 10 reads, this low reads = generaly unreliable 
+  left_join(zo_phylum_groups, by = "phylum_name") %>%
+  ungroup() 
+
+```
+
