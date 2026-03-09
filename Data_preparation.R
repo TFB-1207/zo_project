@@ -30,10 +30,10 @@ library(ggridges)
 ## Load data ##
 
 # Set working directory
-setwd("C:/Users/kleij057/OneDrive - Wageningen University & Research/DATA/SedaDNA clean code")
+setwd("C:/Users/brouw192/OneDrive - Wageningen University & Research/Documenten/zoe_data_script/data")
 
 # Load sedaDNA data
-nepaldat <- readr::read_tsv("260303_taxa_out.tsv")
+nepaldat <- read_tsv("C:/Users/brouw192/OneDrive - Wageningen University & Research/Documenten/zoe_data_script/data/sequencing/260303_taxa_out.tsv")
 
 # BUG: This needs to be moved from indexing to colnames
 #nepaldat <- nepaldat[,c(1:4,7:70)]

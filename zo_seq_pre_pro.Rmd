@@ -153,11 +153,10 @@ zo_df_gs_0303 <- zo_df_raw_0303 %>% # so we define the genus data frame (df_gs) 
   group_by(library, genus_name) %>%
   slice_max(genus_count_assembly, n =1, with_ties = FALSE) %>% # this step is to only keep the assembly with the max genus counts. This                                                                  so we don't have double genus entries per library. number of unique                                                                    reads per genus are in sum_genus_count
   mutate(deam_rate_genus = (deam5p_frac_genus + deam3p_frac_genus) / 2)  %>% #add deamination rate
-  filter(!genus_count_assembly < 10) %>% # filter out entries with lower than 10 reads, this low reads = generaly unreliable 
+  filter(!genus_count_assembly < 100) %>% # filter out entries with lower than 10 reads, this low reads = generaly unreliable 
   left_join(zo_phylum_groups, by = "phylum_name") %>%
   ungroup() 
 
 ```
 
-testestest
 
